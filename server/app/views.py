@@ -1,15 +1,15 @@
-from rest_framework import viewsets, generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, generics, status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
 from .models import Job
 from .serializers import JobSerializer
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_queryset(self):
-        employer = self.request.user
-        return Job.objects.filter(employer=employer)
+        return Job.objects.all()  # Admin can view all jobs
 
 class JobSearchView(generics.ListAPIView):
     serializer_class = JobSerializer
@@ -32,3 +32,17 @@ class JobSearchView(generics.ListAPIView):
 class JobDetailView(generics.RetrieveAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
+
+class JobStatusUpdateView(generics.UpdateAPIView):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        new_status = request.data.get('status')
+        if new_status:
+            instance.status = new_status
+            instance.save()
+            return Response({'status': 'Job status updated'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
