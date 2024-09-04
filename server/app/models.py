@@ -5,10 +5,14 @@ class Job(models.Model):
     location = models.CharField(max_length=255)
     job_type = models.CharField(max_length=50)
     status = models.CharField(max_length=50)
-    
+
 class Application(models.Model):
+    job = models.ForeignKey(Job, related_name='applications', on_delete=models.CASCADE)
     candidate_id = models.IntegerField()
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    cover_letter = models.TextField()
-    resume = models.FileField(upload_to='resumes/')
-    applied_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Notification(models.Model):
+    employer_id = models.IntegerField()
+    application_id = models.ForeignKey(Application, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -1,8 +1,8 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Job, Application
-from .serializers import JobSerializer, ApplicationSerializer
+from .models import Job, Application, Notification
+from .serializers import JobSerializer, ApplicationSerializer, NotificationSerializer
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
@@ -52,7 +52,8 @@ class JobApplicationView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(candidate_id=self.request.user.id)
+        instance = serializer.save(candidate_id=self.request.user.id)
+        Notification.objects.create(employer_id=self.request.data.get('employer_id'), application_id=instance)
 
 class CandidateApplicationsView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
@@ -60,3 +61,21 @@ class CandidateApplicationsView(generics.ListAPIView):
 
     def get_queryset(self):
         return Application.objects.filter(candidate_id=self.request.user.id)
+
+class NotificationView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        employer_id = self.kwargs['employer_id']
+        return Notification.objects.filter(employer_id=employer_id)
+
+class MarkNotificationAsReadView(generics.UpdateAPIView):
+    queryset = Notification.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, employer_id, notification_id, *args, **kwargs):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({'status': 'Notification marked as read'}, status=status.HTTP_200_OK)
