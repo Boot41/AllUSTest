@@ -1,13 +1,18 @@
 from django.db import models
 
-class Employer(models.Model):
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-
 class Job(models.Model):
-    employer = models.ForeignKey(Employer, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    location = models.CharField(max_length=255)
+    job_type = models.CharField(max_length=50)
+    status = models.CharField(max_length=50)
+
+class Application(models.Model):
+    job = models.ForeignKey(Job, related_name='applications', on_delete=models.CASCADE)
+    candidate_id = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
+
+class Notification(models.Model):
+    employer_id = models.IntegerField()
+    application_id = models.ForeignKey(Application, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
